@@ -18,7 +18,7 @@ def main():
     records = []
     issues = []
     seen = {}
-
+    conflicts = set()
     for class_dir in sorted(DATA_DIR.iterdir()):
         if not class_dir.is_dir():
             continue
@@ -46,13 +46,16 @@ def main():
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             if digest in seen:
                 previous_path, previous_class = seen[digest]
+
                 if previous_class != class_dir.name:
-                    raise ValueError(
-                        f"相同图片存在不同标签：{previous_path} 和 {relative_path}"
-                    )
+                    conflicts.add(digest)
+                    reason = f"label conflict with {previous_path}"
+                else:
+                    reason = f"duplicate of {previous_path}"
+
                 issues.append({
                     "path": relative_path,
-                    "reason": f"duplicate of {previous_path}",
+                    "reason": reason,
                 })
                 continue
 
@@ -62,7 +65,19 @@ def main():
                 "class": class_dir.name,
                 "sha256": digest,
             })
+    # 排除冲突组中最先保留的图片，确保整个冲突组都不参与训练
+    clean_records = []
+    for record in records:
+        if record["sha256"] in conflicts:
+            issues.append({
+                "path": record["path"],
+                "reason": "excluded because identical image has conflicting labels",
+            })
+        else:
+            clean_records.append(record)
 
+    records = clean_records
+    print(f"标签冲突组数：{len(conflicts)}")
     if not records:
         raise ValueError("没有可用图片，请检查数据路径。")
 
