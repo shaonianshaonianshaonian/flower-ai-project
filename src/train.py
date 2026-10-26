@@ -23,7 +23,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_DIR / "outputs"
 
 SEED = 42
-EPOCHS = 3          # 先检查流程，之后再增加
+EPOCHS = 30          # 先检查流程，之后再增加
 BATCH_SIZE = 16
 LEARNING_RATE = 0.001
 IMAGE_SIZE = 128
